@@ -5,24 +5,18 @@ require 'json'
 module BRPopulate
   def self.states
     http = Net::HTTP.new('raw.githubusercontent.com', 443); http.use_ssl = true
-    JSON.parse http.get('/celsodantas/br_populate/master/states.json').body
-  end
-
-  def self.capital?(city, state)
-    city["name"] == state["capital"]
+    JSON.parse http.get('/rockcontent/br_populate/master/states.json').body
   end
 
   def self.populate
+    brazil = Country.find_by(name: "Brasil")
+
     states.each do |state|
-      region_obj = Region.find_or_create_by(:name => state["region"])
-      state_obj = State.new(:acronym => state["acronym"], :name => state["name"], :region => region_obj)
+      state_obj = State.new(:code => state["acronym"], :name => state["name"], :country => brazil)
       state_obj.save
 
       state["cities"].each do |city|
-        c = City.new
-        c.name = city["name"]
-        c.state = state_obj
-        c.capital = capital?(city, state)
+        c = City.new(name: city["name"], state: state_obj)
         c.save
       end
     end
